@@ -1,0 +1,23 @@
+body {
+    box-sizing: border-box;
+    width: 400px;
+    height: 200px;
+}
+
+.input-wrapper {
+    width: 100%;
+    margin: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.input-wrapper label {
+    width: 35%;
+}
+
+.input-wrapper input {
+    width: 60%;
+}
+
+

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<h1>Amazon s3 iframe web scraper</h1>
+<span id="currentUrl">Current url: </span>
+<form>
+    <div class="input-wrapper">
+        <label for="iframeLink">Iframe src link</label>
+        <input type="text" id="iframeLink" required>
+    </div>
+
+    <div class="input-wrapper">
+        <label for="aSelector">Element &lt;a&gt;&lt;/a&gt; selector</label>
+        <input type="text" id="aSelector" required>
+    </div>
+
+    <button type="submit" id="scrapeBtn">Run</button>
+</form>
+
+<script src="popup.js"></script>
+</body>
+</html>
