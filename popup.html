@@ -7,19 +7,22 @@
 <body>
 <h1>Amazon s3 iframe web scraper</h1>
 <span id="currentUrl">Current url: </span>
-<form>
+<form id="scrapeForm">
     <div class="input-wrapper">
         <label for="iframeLink">Iframe src link</label>
-        <input type="text" id="iframeLink" required>
+        <input type="text" id="iframeLink" required autocomplete="off">
     </div>
 
     <div class="input-wrapper">
         <label for="aSelector">Element &lt;a&gt;&lt;/a&gt; selector</label>
-        <input type="text" id="aSelector" required>
+        <input type="text" id="aSelector" required autocomplete="off">
     </div>
 
-    <button type="submit" id="scrapeBtn">Run</button>
+    <button type="submit">Run</button>
 </form>
+
+<button id="findIframeBtn">Find iframe</button>
+<button id="getTargetLinksBtn">Get target links</button>
 
 <script src="popup.js"></script>
 </body>
