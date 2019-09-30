@@ -28,6 +28,7 @@ window.onload = function () {
     // });
 };
 
+// Search iframe
 const findIframeBtn = document.getElementById('findIframeBtn');
 findIframeBtn.addEventListener('click', () => {
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
@@ -47,13 +48,15 @@ findIframeBtn.addEventListener('click', () => {
     });
 }, true);
 
+// Get a hrefs for future fetching
 const getTargetLinksBtn = document.getElementById('getTargetLinksBtn');
 getTargetLinksBtn.addEventListener('click', () => {
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
         chrome.storage.local.get(['pageAndIframeUrls'], result => {
+            const targetAHrefsUrl = getTargetAHrefsUrl(result.pageAndIframeUrls);
             const message = {
                 action: ACTIONS.GET_TARGET_LINKS,
-                currentPageUrl: result.pageAndIframeUrls.currentPageUrl
+                targetAHrefsUrl: targetAHrefsUrl
             };
             console.log('message', message);
             chrome.tabs.sendMessage(tabs[0].id, message, response => {
@@ -62,6 +65,25 @@ getTargetLinksBtn.addEventListener('click', () => {
         });
     });
 }, true);
+
+// href value that is user in select
+function getTargetAHrefsUrl(pageAndIframeUrls) {
+    const linkPartsArr = pageAndIframeUrls.currentPageUrl.split("/");
+    const parentUrlDomain =  linkPartsArr[0] + "//" + linkPartsArr[2];
+    const iframeSrcParams = getIframeSrcParams(pageAndIframeUrls.iframeSrc);
+    return `${parentUrlDomain}/${iframeSrcParams.webModuleId}/#${iframeSrcParams.webModulePathName}`;
+}
+
+// Extract parameter from iframe src (necessary for link fetch queries)
+function getIframeSrcParams(iframeSrc) {
+    const iframeSrcToUrl = new URL(iframeSrc.replace('#', '')); // delete anchor symbol from URL because it does not allow to extract params
+    return {
+        webModuleId: iframeSrcToUrl.searchParams.get('web-module-id'),
+        campaign: iframeSrcToUrl.searchParams.get('campaign'),
+        organization: iframeSrcToUrl.searchParams.get('organization'),
+        webModulePathName: iframeSrcToUrl.searchParams.get('web-module-pathname'),
+    };
+}
 
 
 // function setCurrentContentPageUrl(currentPageUrl) {

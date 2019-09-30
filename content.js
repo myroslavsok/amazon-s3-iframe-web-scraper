@@ -20,14 +20,14 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         //     sendResponse(window.location.href); // Get current page URL
         //     break;
         case ACTIONS.FIND_IFRAME_ACTION:
-            let response = {
+            const response = {
                 iframeSrc: getIframeSrc(),
                 currentPageUrl: window.location.href
             };
             sendResponse(response);
             break;
         case ACTIONS.GET_TARGET_LINKS:
-            sendResponse(getTargetAHrefsBySelector(request.currentPageUrl));
+            sendResponse(getTargetAHrefsBySelector(request.targetAHrefsUrl));
             break;
     }
 });
