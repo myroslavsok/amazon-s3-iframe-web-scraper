@@ -36,7 +36,6 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 function getIframeSrc() {
     const iframe = document.body.querySelector('iframe');
     iframe.style.border = '2px solid blue';
-    console.log('iframe', iframe);
     console.log('iframe', iframe.src);
     return iframe.src;
 }

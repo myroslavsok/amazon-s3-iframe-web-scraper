@@ -37,29 +37,28 @@ findIframeBtn.addEventListener('click', () => {
         chrome.tabs.sendMessage(tabs[0].id, message, pageAndIframeUrls => {
             console.log('findIframeBtn resp', pageAndIframeUrls);
             // pageAndIframeUrls includes .iframeSrc && .currentPageUrl
-            chrome.storage.sync.set({ 'pageAndIframeUrls': pageAndIframeUrls });
-            // TODO Mirek add null handler
-            if (window.confirm('Would you like to go to iframe link?')) {
-                chrome.tabs.create({ url: pageAndIframeUrls.iframeSrc });
-            }
+            chrome.storage.local.set({ 'pageAndIframeUrls': pageAndIframeUrls }, () => {
+                // TODO Mirek add null handler
+                if (window.confirm('Would you like to go to iframe link?')) {
+                    chrome.tabs.create({ url: pageAndIframeUrls.iframeSrc });
+                }
+            });
         });
     });
 }, true);
 
 const getTargetLinksBtn = document.getElementById('getTargetLinksBtn');
 getTargetLinksBtn.addEventListener('click', () => {
-    let currentPageUrl = '';
-    chrome.storage.sync.get(['pageAndIframeUrls'], result => {
-        currentPageUrl = result.pageAndIframeUrls.currentPageUrl;
-    });
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-        const message = {
-            action: ACTIONS.GET_TARGET_LINKS,
-            currentPageUrl: currentPageUrl
-        };
-        console.log('message', message);
-        chrome.tabs.sendMessage(tabs[0].id, message, response => {
-            console.log('getTargetLinksBtn resp', response);
+        chrome.storage.local.get(['pageAndIframeUrls'], result => {
+            const message = {
+                action: ACTIONS.GET_TARGET_LINKS,
+                currentPageUrl: result.pageAndIframeUrls.currentPageUrl
+            };
+            console.log('message', message);
+            chrome.tabs.sendMessage(tabs[0].id, message, response => {
+                console.log('getTargetLinksBtn resp', response);
+            });
         });
     });
 }, true);
