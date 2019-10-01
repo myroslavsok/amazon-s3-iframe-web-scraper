@@ -45,7 +45,7 @@ function getTargetAHrefsBySelector(currentPageUrl) {
 
 // Export CSV file
 function exportCSVFile(result) {
-    const FILE_NAME = 'export-test.csv';
+    const FILE_NAME = 'exhibitors.csv';
     let blob = new Blob([result], {type: 'text/csv;charset=utf-8;'});
     if (navigator.msSaveBlob) { // IE 10+
         navigator.msSaveBlob(blob, FILE_NAME);

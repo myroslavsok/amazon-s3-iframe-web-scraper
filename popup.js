@@ -65,17 +65,23 @@ getTargetLinksBtn.addEventListener('click', () => {
             };
             chrome.tabs.sendMessage(tabs[0].id, message, targetAHrefsUrls => {
                 let exhibitorsArray;
+
+                let statusSpan = document.getElementById('statusSpan');
+                statusSpan.textContent = 'Wait please...';
+
                 getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, result.pageAndIframeUrls.iframeSrc).then(exhibitorsJSON => {
                     exhibitorsArray = exhibitorsJSON
                         .map(JSON.parse)
                         .map(exhibitor => extractExhibitorData(exhibitor, targetAHrefsUrl));
                     const exhibitorsCSV = parseDateToCSV({data: exhibitorsArray});
+                    console.log('exhibitorsArray', exhibitorsArray);
                     const messageDownloadCSV = {
                         action: ACTIONS.DOWNLOAD_CSV,
                         exhibitorsCSV: exhibitorsCSV
                     };
                     chrome.tabs.sendMessage(tabs[0].id, messageDownloadCSV, response => {
                         console.log('response back');
+                        statusSpan.textContent = 'None';
                     });
 
                 });
