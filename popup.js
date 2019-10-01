@@ -60,47 +60,16 @@ getTargetLinksBtn.addEventListener('click', () => {
             console.log('message', message);
             chrome.tabs.sendMessage(tabs[0].id, message, targetAHrefsUrls => {
                 let exhibitorsArray;
-                getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, result.pageAndIframeUrls.iframeSrc).then(exhibitors => {
-                    console.log('exhibitors', exhibitors);
-                    exhibitorsArray = exhibitors;
+                getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, result.pageAndIframeUrls.iframeSrc).then(exhibitorsJSON => {
+                    exhibitorsArray = exhibitorsJSON
+                        .map(JSON.parse)
+                        .map(exhibitor => extractExhibitorData(exhibitor, targetAHrefsUrl));
+                    console.log('exhibitors', exhibitorsArray);
                 });
             });
         });
     });
 }, true);
-
-// Fetch exhibitors and process their data
-function getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, iframeSrc) {
-    const iframeSrcParams = getIframeSrcParams(iframeSrc);
-    const exhibitorCommonUrl = `https://${iframeSrcParams.organization}.control.buzz/campaign/${iframeSrcParams.campaign}/web-module/${iframeSrcParams.webModuleId}${iframeSrcParams.webModulePathName}`;
-    let exhibitorsLinksArr = [];
-    targetAHrefsUrls.forEach(aHref => {
-        const companyId = aHref.split('/').pop();
-        const exhibitorUrl = exhibitorCommonUrl + companyId;
-        exhibitorsLinksArr.push(exhibitorUrl);
-    });
-    return Promise.all(exhibitorsLinksArr.map(link => fetch(link))).then(exhibitorResponses =>
-        Promise.all(exhibitorResponses.map(exhibitor => exhibitor.text()))
-    );
-
-    // Promise.allSettled(exhibitorsFetchArr).then(resultsArr => {
-    //     resultsArr
-    //         .filter(result => result.status === 'fulfilled')
-    //         .map(result => result.value.text().then(exhibitorResponseData => {
-    //             const exhibitorData = JSON.parse(exhibitorResponseData);
-    //             console.log('exhibitor', JSON.parse(exhibitorResponseData));
-    //             return {
-    //                 identifier: exhibitorData.identifier,
-    //                 name: exhibitorData.name,
-    //                 stand: exhibitorData.stands[0],
-    //                 biography: exhibitorData.biography,
-    //                 // profileUrl: aHref, // TODO: Mirek add hrefs
-    //                 website: exhibitorData.website
-    //             };
-    //         }));
-    // });
-
-}
 
 // href value that is user in select
 function getTargetAHrefsUrl(pageAndIframeUrls) {
@@ -118,6 +87,32 @@ function getIframeSrcParams(iframeSrc) {
         campaign: iframeSrcToUrl.searchParams.get('campaign'),
         organization: iframeSrcToUrl.searchParams.get('organization'),
         webModulePathName: iframeSrcToUrl.searchParams.get('web-module-pathname'),
+    };
+}
+
+// Fetch exhibitors and process their data
+function getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, iframeSrc) {
+    const iframeSrcParams = getIframeSrcParams(iframeSrc);
+    const exhibitorCommonUrl = `https://${iframeSrcParams.organization}.control.buzz/campaign/${iframeSrcParams.campaign}/web-module/${iframeSrcParams.webModuleId}${iframeSrcParams.webModulePathName}`;
+    let exhibitorsLinksArr = [];
+    targetAHrefsUrls.forEach(aHref => {
+        const companyId = aHref.split('/').pop();
+        const exhibitorUrl = exhibitorCommonUrl + companyId;
+        exhibitorsLinksArr.push(exhibitorUrl);
+    });
+    return Promise.all(exhibitorsLinksArr.map(link => fetch(link))).then(exhibitorResponses =>
+        Promise.all(exhibitorResponses.map(exhibitor => exhibitor.text()))
+    );
+}
+
+function extractExhibitorData(exhibitor, targetAHrefsUrl) {
+    return {
+        identifier: exhibitor.identifier,
+        name: exhibitor.name,
+        stand: exhibitor.stands[0],
+        biography: exhibitor.biography,
+        profileUrl: targetAHrefsUrl + exhibitor.identifier,
+        website: exhibitor.website
     };
 }
 
