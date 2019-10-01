@@ -36,12 +36,11 @@ findIframeBtn.addEventListener('click', () => {
             action: ACTIONS.FIND_IFRAME_ACTION
         };
         chrome.tabs.sendMessage(tabs[0].id, message, pageAndIframeUrls => {
-            console.log('findIframeBtn resp', pageAndIframeUrls);
             // pageAndIframeUrls includes .iframeSrc && .currentPageUrl
-            chrome.storage.local.set({ 'pageAndIframeUrls': pageAndIframeUrls }, () => {
+            chrome.storage.local.set({'pageAndIframeUrls': pageAndIframeUrls}, () => {
                 // TODO Mirek add null handler
                 if (window.confirm('Would you like to go to iframe link?')) {
-                    chrome.tabs.create({ url: pageAndIframeUrls.iframeSrc });
+                    chrome.tabs.create({url: pageAndIframeUrls.iframeSrc});
                 }
             });
         });
@@ -59,17 +58,54 @@ getTargetLinksBtn.addEventListener('click', () => {
                 targetAHrefsUrl: targetAHrefsUrl
             };
             console.log('message', message);
-            chrome.tabs.sendMessage(tabs[0].id, message, response => {
-                console.log('getTargetLinksBtn resp', response);
+            chrome.tabs.sendMessage(tabs[0].id, message, targetAHrefsUrls => {
+                let exhibitorsArray;
+                getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, result.pageAndIframeUrls.iframeSrc).then(exhibitors => {
+                    console.log('exhibitors', exhibitors);
+                    exhibitorsArray = exhibitors;
+                });
             });
         });
     });
 }, true);
 
+// Fetch exhibitors and process their data
+function getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, iframeSrc) {
+    const iframeSrcParams = getIframeSrcParams(iframeSrc);
+    const exhibitorCommonUrl = `https://${iframeSrcParams.organization}.control.buzz/campaign/${iframeSrcParams.campaign}/web-module/${iframeSrcParams.webModuleId}${iframeSrcParams.webModulePathName}`;
+    let exhibitorsLinksArr = [];
+    targetAHrefsUrls.forEach(aHref => {
+        const companyId = aHref.split('/').pop();
+        const exhibitorUrl = exhibitorCommonUrl + companyId;
+        exhibitorsLinksArr.push(exhibitorUrl);
+    });
+    return Promise.all(exhibitorsLinksArr.map(link => fetch(link))).then(exhibitorResponses =>
+        Promise.all(exhibitorResponses.map(exhibitor => exhibitor.text()))
+    );
+
+    // Promise.allSettled(exhibitorsFetchArr).then(resultsArr => {
+    //     resultsArr
+    //         .filter(result => result.status === 'fulfilled')
+    //         .map(result => result.value.text().then(exhibitorResponseData => {
+    //             const exhibitorData = JSON.parse(exhibitorResponseData);
+    //             console.log('exhibitor', JSON.parse(exhibitorResponseData));
+    //             return {
+    //                 identifier: exhibitorData.identifier,
+    //                 name: exhibitorData.name,
+    //                 stand: exhibitorData.stands[0],
+    //                 biography: exhibitorData.biography,
+    //                 // profileUrl: aHref, // TODO: Mirek add hrefs
+    //                 website: exhibitorData.website
+    //             };
+    //         }));
+    // });
+
+}
+
 // href value that is user in select
 function getTargetAHrefsUrl(pageAndIframeUrls) {
     const linkPartsArr = pageAndIframeUrls.currentPageUrl.split("/");
-    const parentUrlDomain =  linkPartsArr[0] + "//" + linkPartsArr[2];
+    const parentUrlDomain = linkPartsArr[0] + "//" + linkPartsArr[2];
     const iframeSrcParams = getIframeSrcParams(pageAndIframeUrls.iframeSrc);
     return `${parentUrlDomain}/${iframeSrcParams.webModuleId}/#${iframeSrcParams.webModulePathName}`;
 }
