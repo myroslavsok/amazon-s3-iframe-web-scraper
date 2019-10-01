@@ -1,24 +1,12 @@
-console.log("content works");
-
-// document.getElementById('webModuleHolderIframe').onload= function() {
-//     console.log('loaded', document.getElementById('webModuleHolderIframe'));
-// };
-
 const ACTIONS = {
-    GET_CURRENT_PAGE_URL: 'get-content-page-url',
-    GET_TARGET_A_HREFS: 'get-target-a-hrefs',
-    GET_IFRAME_PRODUCT_LINKS: 'get-iframe-product-links',
-
     FIND_IFRAME_ACTION: 'find-iframe-action',
     GET_TARGET_LINKS: 'get-target-links',
+    DOWNLOAD_CSV: 'download-csv'
 };
 
 // Message listener
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     switch (request.action) {
-        // case ACTIONS.GET_CURRENT_PAGE_URL:
-        //     sendResponse(window.location.href); // Get current page URL
-        //     break;
         case ACTIONS.FIND_IFRAME_ACTION:
             const response = {
                 iframeSrc: getIframeSrc(),
@@ -28,6 +16,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             break;
         case ACTIONS.GET_TARGET_LINKS:
             sendResponse(getTargetAHrefsBySelector(request.targetAHrefsUrl));
+            break;
+        case ACTIONS.DOWNLOAD_CSV:
+            exportCSVFile(request.exhibitorsCSV);
+            sendResponse();
             break;
     }
 });
@@ -50,4 +42,26 @@ function getTargetAHrefsBySelector(currentPageUrl) {
     console.log('links', targetAHrefsArr);
     return targetAHrefsArr;
 }
+
+// Export CSV file
+function exportCSVFile(result) {
+    const FILE_NAME = 'export-test.csv';
+    let blob = new Blob([result], {type: 'text/csv;charset=utf-8;'});
+    if (navigator.msSaveBlob) { // IE 10+
+        navigator.msSaveBlob(blob, FILE_NAME);
+    } else {
+        let link = document.createElement("a");
+        if (link.download !== undefined) { // feature detection
+            // Browsers that support HTML5 download attribute
+            let url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", FILE_NAME);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+}
+
 

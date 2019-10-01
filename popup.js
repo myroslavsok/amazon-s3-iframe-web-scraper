@@ -1,13 +1,19 @@
-console.log('popup works');
-
 const ACTIONS = {
-    GET_CURRENT_PAGE_URL: 'get-content-page-url',
-    GET_TARGET_A_HREFS: 'get-target-a-hrefs',
-    GET_IFRAME_PRODUCT_LINKS: 'get-iframe-product-links',
-
     FIND_IFRAME_ACTION: 'find-iframe-action',
     GET_TARGET_LINKS: 'get-target-links',
+    DOWNLOAD_CSV: 'download-csv'
 };
+
+// Must be the same order of properties as in extractExhibitorData()
+const HEADERS_CSV = {
+    name: 'Company name',
+    stand: 'Stand number',
+    biography: 'Biography',
+    profileUrl: 'Profile url',
+    website: 'Website'
+};
+
+const FILE_TITLE = 'exhibitors';
 
 // Popup onOpen
 window.onload = function () {
@@ -57,14 +63,21 @@ getTargetLinksBtn.addEventListener('click', () => {
                 action: ACTIONS.GET_TARGET_LINKS,
                 targetAHrefsUrl: targetAHrefsUrl
             };
-            console.log('message', message);
             chrome.tabs.sendMessage(tabs[0].id, message, targetAHrefsUrls => {
                 let exhibitorsArray;
                 getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, result.pageAndIframeUrls.iframeSrc).then(exhibitorsJSON => {
                     exhibitorsArray = exhibitorsJSON
                         .map(JSON.parse)
                         .map(exhibitor => extractExhibitorData(exhibitor, targetAHrefsUrl));
-                    console.log('exhibitors', exhibitorsArray);
+                    const exhibitorsCSV = parseDateToCSV({data: exhibitorsArray});
+                    const messageDownloadCSV = {
+                        action: ACTIONS.DOWNLOAD_CSV,
+                        exhibitorsCSV: exhibitorsCSV
+                    };
+                    chrome.tabs.sendMessage(tabs[0].id, messageDownloadCSV, response => {
+                        console.log('response back');
+                    });
+
                 });
             });
         });
@@ -105,86 +118,38 @@ function getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, iframeSrc) {
     );
 }
 
+// Must be the same order of properties as in HEADERS_CSV
 function extractExhibitorData(exhibitor, targetAHrefsUrl) {
     return {
-        identifier: exhibitor.identifier,
         name: exhibitor.name,
         stand: exhibitor.stands[0],
-        biography: exhibitor.biography,
+        // TODO Mirek resolve issue with long text
+        // biography: exhibitor.biography, // so as to avoid errors while generating CSV
         profileUrl: targetAHrefsUrl + exhibitor.identifier,
         website: exhibitor.website
     };
 }
 
-
-// function setCurrentContentPageUrl(currentPageUrl) {
-//     document.getElementById('currentUrl').textContent += currentPageUrl;
-// }
-
-// Run scraper
-// const scrapeForm = document.getElementById('scrapeForm');
-// scrapeForm.addEventListener('submit', runScraper, true);
-// function runScraper(e) {
-//     e.preventDefault();
-//     const iframeLink = document.getElementById('iframeLink').value;
-//     // const aSelector = document.getElementById('aSelector').value;
-//     console.log('iframeLink', iframeLink);
-//     console.log('aSelector', aSelector);
-//     getTargetAHrefs(aSelector);
-// }
-
-// Get links for fetching
-// function getTargetAHrefs(selector) {
-//     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-//         const message = {action: ACTIONS.GET_TARGET_A_HREFS, selector: selector};
-//         chrome.tabs.sendMessage(tabs[0].id, message, response => {
-//             console.log('linkArray', response);
-//         });
-//     })
-// }
-
-
-// function startScraping() {
-//   const iframeLink = document.getElementById('iframeLink');
-//   const aSelector = document.getElementById('aSelector');
-//
-//   console.log(iframeLink);
-//   console.log(aSelector);
-// }
-
-// let changeColor = document.getElementById('changeColor');
-// // ...
-// changeColor.onclick = function(element) {
-//   let color = element.target.value;
-//   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-//     chrome.tabs.executeScript(
-//         tabs[0].id,
-//         {code: 'document.body.style.backgroundColor = "' + color + '";'});
-//   });
-// };
-
-// document.addEventListener('DOMContentLoaded', function () {
-//     // const scrapeBtn = document.getElementById('scrapeBtn');
-//
-//     // scrapeBtn.
-//     //
-//     // var checkPageButton = document.getElementById('checkPage');
-//     //
-//     // checkPageButton.addEventListener('click', function() {
-//     //
-//     //   chrome.tabs.getSelected(null, function(tab) {
-//     //     d = document;
-//     //
-//     //     var f = d.createElement('form');
-//     //     f.action = 'http://gtmetrix.com/analyze.html?bm';
-//     //     f.method = 'post';
-//     //     var i = d.createElement('input');
-//     //     i.type = 'hidden';
-//     //     i.name = 'url';
-//     //     i.value = tab.url;
-//     //     f.appendChild(i);
-//     //     d.body.appendChild(f);
-//     //     f.submit();
-//     //   });
-//     // }, false);
-// }, false);
+// Parse to CSV
+function parseDateToCSV({data = null, columnDelimiter = ",", lineDelimiter = "\n"}) {
+    let result, ctr, keys;
+    if (data === null || !data.length) {
+        return null
+    }
+    keys = Object.keys(data[0]);
+    result = "";
+    result += keys.join(columnDelimiter);
+    result += lineDelimiter;
+    data.forEach(item => {
+        ctr = 0;
+        keys.forEach(key => {
+            if (ctr > 0) {
+                result += columnDelimiter
+            }
+            result += typeof item[key] === "string" && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key];
+            ctr++
+        });
+        result += lineDelimiter
+    });
+    return result
+}
