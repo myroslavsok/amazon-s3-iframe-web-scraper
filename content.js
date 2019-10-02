@@ -44,9 +44,9 @@ function getTargetAHrefsBySelector(currentPageUrl) {
 }
 
 // Export CSV file
-function exportCSVFile(result) {
+function exportCSVFile(csvFile) {
     const FILE_NAME = 'exhibitors.csv';
-    let blob = new Blob([result], {type: 'text/csv;charset=utf-8;'});
+    let blob = new Blob([csvFile], {type: 'text/csv;charset=utf-8;'});
     if (navigator.msSaveBlob) { // IE 10+
         navigator.msSaveBlob(blob, FILE_NAME);
     } else {

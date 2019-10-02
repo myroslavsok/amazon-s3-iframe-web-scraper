@@ -4,36 +4,6 @@ const ACTIONS = {
     DOWNLOAD_CSV: 'download-csv'
 };
 
-// Must be the same order of properties as in extractExhibitorData()
-const HEADERS_CSV = {
-    name: 'Company name',
-    stand: 'Stand number',
-    biography: 'Biography',
-    profileUrl: 'Profile url',
-    website: 'Website'
-};
-
-const FILE_TITLE = 'exhibitors';
-
-// Popup onOpen
-window.onload = function () {
-    // const newURL = "http://www.youtube.com/watch?v=oHg5SJYRHA0";
-    // chrome.tabs.create({ url: newURL });
-
-    // chrome.tabs.query({active: true, currentWindow: true}, setCurrentContentPageUrl)
-
-    // chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-    //     const message = {
-    //         action: ACTIONS.GET_CURRENT_PAGE_URL
-    //     };
-    //     chrome.tabs.sendMessage(tabs[0].id, message, response => {
-    //         currentContentPageUrl = response;
-    //         console.log('onload', currentContentPageUrl);
-    //         setCurrentContentPageUrl(currentContentPageUrl);
-    //     });
-    // });
-};
-
 // Search iframe
 const findIframeBtn = document.getElementById('findIframeBtn');
 findIframeBtn.addEventListener('click', () => {
@@ -73,8 +43,7 @@ getTargetLinksBtn.addEventListener('click', () => {
                     exhibitorsArray = exhibitorsJSON
                         .map(JSON.parse)
                         .map(exhibitor => extractExhibitorData(exhibitor, targetAHrefsUrl));
-                    const exhibitorsCSV = parseDateToCSV({data: exhibitorsArray});
-                    console.log('exhibitorsArray', exhibitorsArray);
+                    const exhibitorsCSV = parseDateToCSV(exhibitorsArray);
                     const messageDownloadCSV = {
                         action: ACTIONS.DOWNLOAD_CSV,
                         exhibitorsCSV: exhibitorsCSV
@@ -83,7 +52,6 @@ getTargetLinksBtn.addEventListener('click', () => {
                         console.log('response back');
                         statusSpan.textContent = 'None';
                     });
-
                 });
             });
         });
@@ -129,33 +97,32 @@ function extractExhibitorData(exhibitor, targetAHrefsUrl) {
     return {
         name: exhibitor.name,
         stand: exhibitor.stands[0],
-        // TODO Mirek resolve issue with long text
-        // biography: exhibitor.biography, // so as to avoid errors while generating CSV
+        biography: exhibitor.biography,
         profileUrl: targetAHrefsUrl + exhibitor.identifier,
         website: exhibitor.website
     };
 }
 
 // Parse to CSV
-function parseDateToCSV({data = null, columnDelimiter = ",", lineDelimiter = "\n"}) {
-    let result, ctr, keys;
-    if (data === null || !data.length) {
-        return null
+function parseDateToCSV(data) {
+    if (!data || !data.length) {
+        return;
     }
-    keys = Object.keys(data[0]);
-    result = "";
-    result += keys.join(columnDelimiter);
-    result += lineDelimiter;
-    data.forEach(item => {
-        ctr = 0;
-        keys.forEach(key => {
-            if (ctr > 0) {
-                result += columnDelimiter
-            }
-            result += typeof item[key] === "string" && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key];
-            ctr++
-        });
-        result += lineDelimiter
-    });
-    return result
+    const separator = ',';
+    const keys = Object.keys(data[0]);
+    return keys.join(separator) +
+        '\n' +
+        data.map(row => {
+            return keys.map(k => {
+                let cell = row[k] === null || row[k] === undefined ? '' : row[k];
+                cell = cell instanceof Date
+                    ? cell.toLocaleString()
+                    : cell.toString().replace(/"/g, '""');
+                if (cell.search(/("|,|\n)/g) >= 0) {
+                    cell = `"${cell}"`;
+                }
+                return cell;
+            }).join(separator);
+        }).join('\n');
 }
+
