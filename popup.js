@@ -9,6 +9,18 @@ const STATUSES = {
     COMPLETE: 'Completed'
 };
 
+// Enabling getTargetLinksBtn if paren page url and iframe src is stored
+window.onload = () => {
+    chrome.storage.local.get(['pageAndIframeUrls'], result => {
+        if (result.pageAndIframeUrls) {
+            setMetaData(result.pageAndIframeUrls); // set meta data on view
+            disableGetTargetLinksBtn(false); // enable getTargetLinksBtn
+        } else {
+            disableGetTargetLinksBtn(true); // disable getTargetLinksBtn
+        }
+    });
+};
+
 // Search iframe
 const findIframeBtn = document.getElementById('findIframeBtn');
 findIframeBtn.addEventListener('click', () => {
@@ -21,10 +33,13 @@ findIframeBtn.addEventListener('click', () => {
             // get iframe src from input
             const iframeSrcLinkInput = document.getElementById('iframeSrcLinkInput');
             if (iframeSrcLinkInput.value) {
-                pageAndIframeUrls.iframeSrc = iframeSrcLinkInput.value
+                pageAndIframeUrls.iframeSrc = iframeSrcLinkInput.value;
+                setMetaData(pageAndIframeUrls);
             }
             chrome.storage.local.set({'pageAndIframeUrls': pageAndIframeUrls}, () => {
+                setMetaData(pageAndIframeUrls);
                 if (!pageAndIframeUrls.iframeSrc) {
+                    disableGetTargetLinksBtn(true);
                     alert('Iframe is not found. Try to insert iframe src link to corresponding input manually and press Find iframe one more time.');
                 } else {
                     if (window.confirm('Iframe was found and marked with blue border. Press OK to got to iframe src link.')) {
@@ -64,6 +79,8 @@ getTargetLinksBtn.addEventListener('click', () => {
                     };
                     chrome.tabs.sendMessage(tabs[0].id, messageDownloadCSV, response => {
                         setStatus(STATUSES.COMPLETE);
+                        setMetaData(null); // set meta data on view
+                        disableGetTargetLinksBtn(true);
                         chrome.storage.local.set({'pageAndIframeUrls': null}); // clear storage
                     });
                 });
@@ -146,5 +163,17 @@ function setStatus(statusTxt) {
 
 function setAmountOfLinks(amountOfLinks) {
     document.getElementById('foundLinkField').textContent = amountOfLinks ? `${amountOfLinks} links were found`: `No link were found`;
+}
+
+function setMetaData(pageAndIframeUrls) {
+    // pageAndIframeUrls includes .iframeSrc && .currentPageUrl
+    document.getElementById('parentPageField').textContent =
+        (pageAndIframeUrls && pageAndIframeUrls.currentPageUrl) ? pageAndIframeUrls.currentPageUrl : '';
+    document.getElementById('iframeSrcField').textContent =
+        (pageAndIframeUrls && pageAndIframeUrls.iframeSrc) ? pageAndIframeUrls.iframeSrc : '';
+}
+
+function disableGetTargetLinksBtn(disableBoolean) {
+    document.getElementById('getTargetLinksBtn').disabled = disableBoolean;
 }
 

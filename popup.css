@@ -18,9 +18,9 @@ hr {
     font-size: 1.1rem;
 }
 
-/*.meta-data {*/
-/*    font-size: 1.1em;*/
-/*}*/
+.meta-data {
+    font-size: 1.1em;
+}
 
 .input-wrapper {
     width: 100%;
