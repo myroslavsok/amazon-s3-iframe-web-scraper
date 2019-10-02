@@ -13,7 +13,7 @@ const STATUSES = {
 window.onload = () => {
     chrome.storage.local.get(['pageAndIframeUrls'], result => {
         setMetaData(result.pageAndIframeUrls); // set meta data on view
-        if (result.pageAndIframeUrls.iframeSrc) {
+        if (result.pageAndIframeUrls && result.pageAndIframeUrls.iframeSrc) {
             disableGetTargetLinksBtn(false); // enable getTargetLinksBtn
         } else {
             disableGetTargetLinksBtn(true); // disable getTargetLinksBtn
@@ -81,8 +81,8 @@ getTargetLinksBtn.addEventListener('click', () => {
                     chrome.tabs.sendMessage(tabs[0].id, messageDownloadCSV, response => {
                         setStatus(STATUSES.COMPLETE);
                         setMetaData(null); // set meta data on view
-                        disableGetTargetLinksBtn(true);
                         chrome.storage.local.set({'pageAndIframeUrls': null}); // clear storage
+                        disableGetTargetLinksBtn(true);
                     });
                 });
             });
