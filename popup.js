@@ -12,8 +12,8 @@ const STATUSES = {
 // Enabling getTargetLinksBtn if paren page url and iframe src is stored
 window.onload = () => {
     chrome.storage.local.get(['pageAndIframeUrls'], result => {
-        if (result.pageAndIframeUrls) {
-            setMetaData(result.pageAndIframeUrls); // set meta data on view
+        setMetaData(result.pageAndIframeUrls); // set meta data on view
+        if (result.pageAndIframeUrls.iframeSrc) {
             disableGetTargetLinksBtn(false); // enable getTargetLinksBtn
         } else {
             disableGetTargetLinksBtn(true); // disable getTargetLinksBtn
