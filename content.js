@@ -27,9 +27,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 // Get iframe src so as to go to new tab
 function getIframeSrc() {
     const iframe = document.body.querySelector('iframe');
-    iframe.style.border = '2px solid blue';
-    console.log('iframe', iframe.src);
-    return iframe.src;
+    if (iframe) {
+        iframe.style.border = '2px solid blue';
+        return iframe.src;
+    }
+    return '';
 }
 
 // Get links for fetching

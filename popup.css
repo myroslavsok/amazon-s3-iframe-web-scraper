@@ -1,7 +1,8 @@
 body {
     box-sizing: border-box;
     width: 400px;
-    height: 240px;
+    min-height: 240px;
+    padding: 10px 5px;
 }
 
 input,
@@ -16,6 +17,10 @@ hr {
 .status {
     font-size: 1.1rem;
 }
+
+/*.meta-data {*/
+/*    font-size: 1.1em;*/
+/*}*/
 
 .input-wrapper {
     width: 100%;

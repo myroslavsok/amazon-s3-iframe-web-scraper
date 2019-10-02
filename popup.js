@@ -12,19 +12,22 @@ const STATUSES = {
 // Search iframe
 const findIframeBtn = document.getElementById('findIframeBtn');
 findIframeBtn.addEventListener('click', () => {
-    const iframeSrcLinkInput = document.getElementById('iframeSrcLinkInput');
-
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
         const message = {
             action: ACTIONS.FIND_IFRAME_ACTION
         };
         chrome.tabs.sendMessage(tabs[0].id, message, pageAndIframeUrls => {
             // pageAndIframeUrls includes .iframeSrc && .currentPageUrl
+            // get iframe src from input
+            const iframeSrcLinkInput = document.getElementById('iframeSrcLinkInput');
+            if (iframeSrcLinkInput.value) {
+                pageAndIframeUrls.iframeSrc = iframeSrcLinkInput.value
+            }
             chrome.storage.local.set({'pageAndIframeUrls': pageAndIframeUrls}, () => {
-                if (!pageAndIframeUrls) {
+                if (!pageAndIframeUrls.iframeSrc) {
                     alert('Iframe is not found. Try to insert iframe src link to corresponding input manually and press Find iframe one more time.');
-                } else if (pageAndIframeUrls.iframeSrc) {
-                    if (window.confirm('Iframe was found automatically and marked with blue border. Press OK to got to iframe src link.')) {
+                } else {
+                    if (window.confirm('Iframe was found and marked with blue border. Press OK to got to iframe src link.')) {
                         chrome.tabs.create({url: pageAndIframeUrls.iframeSrc});
                     }
                 }
@@ -138,12 +141,10 @@ function parseDateToCSV(data) {
 }
 
 function setStatus(statusTxt) {
-    const statusSpan = document.getElementById('statusSpan');
-    statusSpan.textContent = statusTxt;
+    document.getElementById('statusSpan').textContent = statusTxt;
 }
 
 function setAmountOfLinks(amountOfLinks) {
-    const foundLinkField = document.getElementById('foundLinkField');
-    foundLinkField.textContent = amountOfLinks ? `${amountOfLinks} links were found`: `No link were found`;
+    document.getElementById('foundLinkField').textContent = amountOfLinks ? `${amountOfLinks} links were found`: `No link were found`;
 }
 
