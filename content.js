@@ -27,9 +27,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 // Get iframe src so as to go to new tab
 function getIframeSrc() {
     const iframe = document.body.querySelector('iframe');
-    iframe.style.border = '2px solid blue';
-    console.log('iframe', iframe.src);
-    return iframe.src;
+    if (iframe) {
+        iframe.style.border = '2px solid blue';
+        return iframe.src;
+    }
+    return '';
 }
 
 // Get links for fetching
@@ -44,9 +46,9 @@ function getTargetAHrefsBySelector(currentPageUrl) {
 }
 
 // Export CSV file
-function exportCSVFile(result) {
+function exportCSVFile(csvFile) {
     const FILE_NAME = 'exhibitors.csv';
-    let blob = new Blob([result], {type: 'text/csv;charset=utf-8;'});
+    let blob = new Blob([csvFile], {type: 'text/csv;charset=utf-8;'});
     if (navigator.msSaveBlob) { // IE 10+
         navigator.msSaveBlob(blob, FILE_NAME);
     } else {

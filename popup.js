@@ -4,34 +4,21 @@ const ACTIONS = {
     DOWNLOAD_CSV: 'download-csv'
 };
 
-// Must be the same order of properties as in extractExhibitorData()
-const HEADERS_CSV = {
-    name: 'Company name',
-    stand: 'Stand number',
-    biography: 'Biography',
-    profileUrl: 'Profile url',
-    website: 'Website'
+const STATUSES = {
+    PENDING: 'Pending. Wait for about 1 minute, please...',
+    COMPLETE: 'Completed'
 };
 
-const FILE_TITLE = 'exhibitors';
-
-// Popup onOpen
-window.onload = function () {
-    // const newURL = "http://www.youtube.com/watch?v=oHg5SJYRHA0";
-    // chrome.tabs.create({ url: newURL });
-
-    // chrome.tabs.query({active: true, currentWindow: true}, setCurrentContentPageUrl)
-
-    // chrome.tabs.query({active: true, currentWindow: true}, tabs => {
-    //     const message = {
-    //         action: ACTIONS.GET_CURRENT_PAGE_URL
-    //     };
-    //     chrome.tabs.sendMessage(tabs[0].id, message, response => {
-    //         currentContentPageUrl = response;
-    //         console.log('onload', currentContentPageUrl);
-    //         setCurrentContentPageUrl(currentContentPageUrl);
-    //     });
-    // });
+// Enabling getTargetLinksBtn if paren page url and iframe src is stored
+window.onload = () => {
+    chrome.storage.local.get(['pageAndIframeUrls'], result => {
+        setMetaData(result.pageAndIframeUrls); // set meta data on view
+        if (result.pageAndIframeUrls && result.pageAndIframeUrls.iframeSrc) {
+            disableGetTargetLinksBtn(false); // enable getTargetLinksBtn
+        } else {
+            disableGetTargetLinksBtn(true); // disable getTargetLinksBtn
+        }
+    });
 };
 
 // Search iframe
@@ -43,10 +30,22 @@ findIframeBtn.addEventListener('click', () => {
         };
         chrome.tabs.sendMessage(tabs[0].id, message, pageAndIframeUrls => {
             // pageAndIframeUrls includes .iframeSrc && .currentPageUrl
+            // get iframe src from input
+            const iframeSrcLinkInput = document.getElementById('iframeSrcLinkInput');
+            if (iframeSrcLinkInput.value) {
+                pageAndIframeUrls.iframeSrc = iframeSrcLinkInput.value;
+                setMetaData(pageAndIframeUrls);
+            }
             chrome.storage.local.set({'pageAndIframeUrls': pageAndIframeUrls}, () => {
-                // TODO Mirek add null handler
-                if (window.confirm('Would you like to go to iframe link?')) {
-                    chrome.tabs.create({url: pageAndIframeUrls.iframeSrc});
+                setMetaData(pageAndIframeUrls);
+                if (!pageAndIframeUrls.iframeSrc) {
+                    disableGetTargetLinksBtn(true);
+                    alert('Iframe is not found. Try to insert iframe src link to corresponding input manually and press Find iframe one more time.');
+                } else {
+                    disableGetTargetLinksBtn(false);
+                    if (window.confirm('Iframe was found and marked with blue border. Press OK to got to iframe src link.')) {
+                        chrome.tabs.create({url: pageAndIframeUrls.iframeSrc});
+                    }
                 }
             });
         });
@@ -58,6 +57,9 @@ const getTargetLinksBtn = document.getElementById('getTargetLinksBtn');
 getTargetLinksBtn.addEventListener('click', () => {
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
         chrome.storage.local.get(['pageAndIframeUrls'], result => {
+            if (!result.pageAndIframeUrls) {
+                return alert('No data provided (iframe src, main page url). Try to repeat full operation from the scratch.');
+            }
             const targetAHrefsUrl = getTargetAHrefsUrl(result.pageAndIframeUrls);
             const message = {
                 action: ACTIONS.GET_TARGET_LINKS,
@@ -65,25 +67,23 @@ getTargetLinksBtn.addEventListener('click', () => {
             };
             chrome.tabs.sendMessage(tabs[0].id, message, targetAHrefsUrls => {
                 let exhibitorsArray;
-
-                let statusSpan = document.getElementById('statusSpan');
-                statusSpan.textContent = 'Wait please...';
-
+                setAmountOfLinks(targetAHrefsUrls.length); // Update amount of links field
+                setStatus(STATUSES.PENDING); // Update status field
                 getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, result.pageAndIframeUrls.iframeSrc).then(exhibitorsJSON => {
                     exhibitorsArray = exhibitorsJSON
                         .map(JSON.parse)
                         .map(exhibitor => extractExhibitorData(exhibitor, targetAHrefsUrl));
-                    const exhibitorsCSV = parseDateToCSV({data: exhibitorsArray});
-                    console.log('exhibitorsArray', exhibitorsArray);
+                    const exhibitorsCSV = parseDateToCSV(exhibitorsArray);
                     const messageDownloadCSV = {
                         action: ACTIONS.DOWNLOAD_CSV,
                         exhibitorsCSV: exhibitorsCSV
                     };
                     chrome.tabs.sendMessage(tabs[0].id, messageDownloadCSV, response => {
-                        console.log('response back');
-                        statusSpan.textContent = 'None';
+                        setStatus(STATUSES.COMPLETE);
+                        setMetaData(null); // set meta data on view
+                        chrome.storage.local.set({'pageAndIframeUrls': null}); // clear storage
+                        disableGetTargetLinksBtn(true);
                     });
-
                 });
             });
         });
@@ -129,33 +129,52 @@ function extractExhibitorData(exhibitor, targetAHrefsUrl) {
     return {
         name: exhibitor.name,
         stand: exhibitor.stands[0],
-        // TODO Mirek resolve issue with long text
-        // biography: exhibitor.biography, // so as to avoid errors while generating CSV
+        biography: exhibitor.biography,
         profileUrl: targetAHrefsUrl + exhibitor.identifier,
         website: exhibitor.website
     };
 }
 
 // Parse to CSV
-function parseDateToCSV({data = null, columnDelimiter = ",", lineDelimiter = "\n"}) {
-    let result, ctr, keys;
-    if (data === null || !data.length) {
-        return null
+function parseDateToCSV(data) {
+    if (!data || !data.length) {
+        return;
     }
-    keys = Object.keys(data[0]);
-    result = "";
-    result += keys.join(columnDelimiter);
-    result += lineDelimiter;
-    data.forEach(item => {
-        ctr = 0;
-        keys.forEach(key => {
-            if (ctr > 0) {
-                result += columnDelimiter
-            }
-            result += typeof item[key] === "string" && item[key].includes(columnDelimiter) ? `"${item[key]}"` : item[key];
-            ctr++
-        });
-        result += lineDelimiter
-    });
-    return result
+    const separator = ',';
+    const keys = Object.keys(data[0]);
+    return keys.join(separator) +
+        '\n' +
+        data.map(row => {
+            return keys.map(k => {
+                let cell = row[k] === null || row[k] === undefined ? '' : row[k];
+                cell = cell instanceof Date
+                    ? cell.toLocaleString()
+                    : cell.toString().replace(/"/g, '""');
+                if (cell.search(/([",\n])/g) >= 0) {
+                    cell = `"${cell}"`;
+                }
+                return cell;
+            }).join(separator);
+        }).join('\n');
 }
+
+function setStatus(statusTxt) {
+    document.getElementById('statusSpan').textContent = statusTxt;
+}
+
+function setAmountOfLinks(amountOfLinks) {
+    document.getElementById('foundLinkField').textContent = amountOfLinks ? `${amountOfLinks} links were found`: `No link were found`;
+}
+
+function setMetaData(pageAndIframeUrls) {
+    // pageAndIframeUrls includes .iframeSrc && .currentPageUrl
+    document.getElementById('parentPageField').textContent =
+        (pageAndIframeUrls && pageAndIframeUrls.currentPageUrl) ? pageAndIframeUrls.currentPageUrl : '';
+    document.getElementById('iframeSrcField').textContent =
+        (pageAndIframeUrls && pageAndIframeUrls.iframeSrc) ? pageAndIframeUrls.iframeSrc : '';
+}
+
+function disableGetTargetLinksBtn(disableBoolean) {
+    document.getElementById('getTargetLinksBtn').disabled = disableBoolean;
+}
+

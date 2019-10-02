@@ -6,24 +6,20 @@
 </head>
 <body>
 <h1>Amazon s3 iframe web scraper</h1>
-<!--<span id="currentUrl">Current url: </span>-->
-<!--<form id="scrapeForm">-->
-<!--    <div class="input-wrapper">-->
-<!--        <label for="iframeLink">Iframe src link</label>-->
-<!--        <input type="text" id="iframeLink" required autocomplete="off">-->
-<!--    </div>-->
+<p class="status"><b>Status:</b> <span id="statusSpan">Waiting for URLs</span></p>
 
-<!--    <div class="input-wrapper">-->
-<!--        <label for="aSelector">Element &lt;a&gt;&lt;/a&gt; selector</label>-->
-<!--        <input type="text" id="aSelector" required autocomplete="off">-->
-<!--    </div>-->
+<p class="meta-data"><b>Parent page url:</b> <span id="parentPageField"></span></p>
+<p class="meta-data"><b>Iframe src:</b> <span id="iframeSrcField"></span></p>
 
-<!--    <button type="submit">Run</button>-->
-<!--</form>-->
+<div class="input-wrapper">
+    <input type="text" id="iframeSrcLinkInput" placeholder="Iframe scr link input" value="">
+    <button id="findIframeBtn">Find iframe</button>
+</div>
 
-<button id="findIframeBtn">Find iframe</button>
-<button id="getTargetLinksBtn">Get target links</button>
-<p>Status: <span id="statusSpan">None</span></p>
+<hr>
+
+<button id="getTargetLinksBtn">Export exhibitors' data to CSV</button>
+<p id="foundLinkField"></p>
 <script src="popup.js"></script>
 </body>
 </html>
