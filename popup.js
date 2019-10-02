@@ -42,6 +42,7 @@ findIframeBtn.addEventListener('click', () => {
                     disableGetTargetLinksBtn(true);
                     alert('Iframe is not found. Try to insert iframe src link to corresponding input manually and press Find iframe one more time.');
                 } else {
+                    disableGetTargetLinksBtn(false);
                     if (window.confirm('Iframe was found and marked with blue border. Press OK to got to iframe src link.')) {
                         chrome.tabs.create({url: pageAndIframeUrls.iframeSrc});
                     }
