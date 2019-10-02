@@ -4,6 +4,17 @@ const ACTIONS = {
     DOWNLOAD_CSV: 'download-csv'
 };
 
+const STATUSES = {
+    DEFAULT: 'Pause',
+    PENDING: 'Pending. Wait for about 1 minute, please...',
+    COMPLETE: 'Completed'
+};
+
+// Drop status
+window.onload = () => {
+    setStatus(STATUSES.DEFAULT);
+};
+
 // Search iframe
 const findIframeBtn = document.getElementById('findIframeBtn');
 findIframeBtn.addEventListener('click', () => {
@@ -14,9 +25,12 @@ findIframeBtn.addEventListener('click', () => {
         chrome.tabs.sendMessage(tabs[0].id, message, pageAndIframeUrls => {
             // pageAndIframeUrls includes .iframeSrc && .currentPageUrl
             chrome.storage.local.set({'pageAndIframeUrls': pageAndIframeUrls}, () => {
-                // TODO Mirek add null handler
-                if (window.confirm('Would you like to go to iframe link?')) {
-                    chrome.tabs.create({url: pageAndIframeUrls.iframeSrc});
+                if (!pageAndIframeUrls) {
+                    alert('Iframe was not found. Try to insert iframe src link to corresponding input manually.');
+                } else if (pageAndIframeUrls.iframeSrc) {
+                    if (window.confirm('Iframe was found automatically and marked with blue border. Press OK to got to iframe src link.')) {
+                        chrome.tabs.create({url: pageAndIframeUrls.iframeSrc});
+                    }
                 }
             });
         });
@@ -36,8 +50,8 @@ getTargetLinksBtn.addEventListener('click', () => {
             chrome.tabs.sendMessage(tabs[0].id, message, targetAHrefsUrls => {
                 let exhibitorsArray;
 
-                let statusSpan = document.getElementById('statusSpan');
-                statusSpan.textContent = 'Wait please...';
+                // Update status field
+                setStatus(STATUSES.PENDING);
 
                 getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, result.pageAndIframeUrls.iframeSrc).then(exhibitorsJSON => {
                     exhibitorsArray = exhibitorsJSON
@@ -50,7 +64,7 @@ getTargetLinksBtn.addEventListener('click', () => {
                     };
                     chrome.tabs.sendMessage(tabs[0].id, messageDownloadCSV, response => {
                         console.log('response back');
-                        statusSpan.textContent = 'None';
+                        setStatus(STATUSES.COMPLETE);
                     });
                 });
             });
@@ -124,5 +138,10 @@ function parseDateToCSV(data) {
                 return cell;
             }).join(separator);
         }).join('\n');
+}
+
+function setStatus(statusTxt) {
+    const statusSpan = document.getElementById('statusSpan');
+    statusSpan.textContent = statusTxt;
 }
 
