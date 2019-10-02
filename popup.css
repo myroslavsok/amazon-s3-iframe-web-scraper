@@ -1,23 +1,39 @@
 body {
     box-sizing: border-box;
     width: 400px;
-    height: 200px;
+    height: 240px;
+}
+
+input,
+button {
+    padding: 5px 10px;
+}
+
+hr {
+    margin: 20px 0;
+}
+
+.status {
+    font-size: 1.1rem;
 }
 
 .input-wrapper {
     width: 100%;
     margin: 20px 0;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-}
-
-.input-wrapper label {
-    width: 35%;
 }
 
 .input-wrapper input {
     width: 60%;
 }
 
+.input-wrapper button {
+    margin-left: 20px;
+}
 
+#foundLinkField {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 1.2rem;
+}

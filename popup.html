@@ -6,25 +6,17 @@
 </head>
 <body>
 <h1>Amazon s3 iframe web scraper</h1>
-<p><b>Status:</b> <span id="statusSpan"></span></p>
+<p class="status"><b>Status:</b> <span id="statusSpan">Pause</span></p>
 
-<button id="findIframeBtn">Find iframe</button>
+<div class="input-wrapper">
+    <input type="text" id="iframeSrcLinkInput" placeholder="Iframe scr link input" value="">
+    <button id="findIframeBtn">Find iframe</button>
+</div>
+
+<hr>
+
 <button id="getTargetLinksBtn">Get target links</button>
-
-<!--<span id="currentUrl">Current url: </span>-->
-<!--<form id="scrapeForm">-->
-<!--    <div class="input-wrapper">-->
-<!--        <label for="iframeLink">Iframe src link</label>-->
-<!--        <input type="text" id="iframeLink" required autocomplete="off">-->
-<!--    </div>-->
-
-<!--    <div class="input-wrapper">-->
-<!--        <label for="aSelector">Element &lt;a&gt;&lt;/a&gt; selector</label>-->
-<!--        <input type="text" id="aSelector" required autocomplete="off">-->
-<!--    </div>-->
-
-<!--    <button type="submit">Run</button>-->
-<!--</form>-->
+<p id="foundLinkField"></p>
 <script src="popup.js"></script>
 </body>
 </html>

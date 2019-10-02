@@ -5,19 +5,15 @@ const ACTIONS = {
 };
 
 const STATUSES = {
-    DEFAULT: 'Pause',
     PENDING: 'Pending. Wait for about 1 minute, please...',
     COMPLETE: 'Completed'
-};
-
-// Drop status
-window.onload = () => {
-    setStatus(STATUSES.DEFAULT);
 };
 
 // Search iframe
 const findIframeBtn = document.getElementById('findIframeBtn');
 findIframeBtn.addEventListener('click', () => {
+    const iframeSrcLinkInput = document.getElementById('iframeSrcLinkInput');
+
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
         const message = {
             action: ACTIONS.FIND_IFRAME_ACTION
@@ -26,7 +22,7 @@ findIframeBtn.addEventListener('click', () => {
             // pageAndIframeUrls includes .iframeSrc && .currentPageUrl
             chrome.storage.local.set({'pageAndIframeUrls': pageAndIframeUrls}, () => {
                 if (!pageAndIframeUrls) {
-                    alert('Iframe was not found. Try to insert iframe src link to corresponding input manually.');
+                    alert('Iframe is not found. Try to insert iframe src link to corresponding input manually and press Find iframe one more time.');
                 } else if (pageAndIframeUrls.iframeSrc) {
                     if (window.confirm('Iframe was found automatically and marked with blue border. Press OK to got to iframe src link.')) {
                         chrome.tabs.create({url: pageAndIframeUrls.iframeSrc});
@@ -42,6 +38,9 @@ const getTargetLinksBtn = document.getElementById('getTargetLinksBtn');
 getTargetLinksBtn.addEventListener('click', () => {
     chrome.tabs.query({active: true, currentWindow: true}, tabs => {
         chrome.storage.local.get(['pageAndIframeUrls'], result => {
+            if (!result.pageAndIframeUrls) {
+                return alert('No data provided (iframe src, main page url). Try to repeat full operation from the scratch.');
+            }
             const targetAHrefsUrl = getTargetAHrefsUrl(result.pageAndIframeUrls);
             const message = {
                 action: ACTIONS.GET_TARGET_LINKS,
@@ -49,10 +48,8 @@ getTargetLinksBtn.addEventListener('click', () => {
             };
             chrome.tabs.sendMessage(tabs[0].id, message, targetAHrefsUrls => {
                 let exhibitorsArray;
-
-                // Update status field
-                setStatus(STATUSES.PENDING);
-
+                setAmountOfLinks(targetAHrefsUrls.length); // Update amount of links field
+                setStatus(STATUSES.PENDING); // Update status field
                 getExhibitorsArrayByTargetAHrefsUrls(targetAHrefsUrls, result.pageAndIframeUrls.iframeSrc).then(exhibitorsJSON => {
                     exhibitorsArray = exhibitorsJSON
                         .map(JSON.parse)
@@ -63,8 +60,8 @@ getTargetLinksBtn.addEventListener('click', () => {
                         exhibitorsCSV: exhibitorsCSV
                     };
                     chrome.tabs.sendMessage(tabs[0].id, messageDownloadCSV, response => {
-                        console.log('response back');
                         setStatus(STATUSES.COMPLETE);
+                        chrome.storage.local.set({'pageAndIframeUrls': null}); // clear storage
                     });
                 });
             });
@@ -143,5 +140,10 @@ function parseDateToCSV(data) {
 function setStatus(statusTxt) {
     const statusSpan = document.getElementById('statusSpan');
     statusSpan.textContent = statusTxt;
+}
+
+function setAmountOfLinks(amountOfLinks) {
+    const foundLinkField = document.getElementById('foundLinkField');
+    foundLinkField.textContent = amountOfLinks ? `${amountOfLinks} links were found`: `No link were found`;
 }
 
