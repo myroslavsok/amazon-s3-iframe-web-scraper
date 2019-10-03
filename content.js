@@ -1,3 +1,4 @@
+// TODO optimize constants with webpack later
 const ACTIONS = {
     FIND_IFRAME_ACTION: 'find-iframe-action',
     GET_TARGET_LINKS: 'get-target-links',
